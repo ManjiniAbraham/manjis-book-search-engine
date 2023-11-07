@@ -8,9 +8,12 @@ import {
   Row
 } from 'react-bootstrap';
 
+
 import Auth from '../utils/auth';
-import { saveBook, searchGoogleBooks } from '../utils/API';
-import { saveBookIds, getSavedBookIds } from '../utils/localStorage';
+import { searchGoogleBooks } from '../utils/API';
+import { getSavedBookIds, saveBookIds } from '../utils/localStorage';
+import { useMutation } from '@apollo/react-hooks';
+import { SAVE_BOOK } from '../utils/mutations'; // Import your SAVE_BOOK mutation
 
 const SearchBooks = () => {
   // create state for holding returned google api data
@@ -21,13 +24,14 @@ const SearchBooks = () => {
   // create state to hold saved bookId values
   const [savedBookIds, setSavedBookIds] = useState(getSavedBookIds());
 
+  const [saveBookMutation] = useMutation(SAVE_BOOK);
+
   // set up useEffect hook to save `savedBookIds` list to localStorage on component unmount
   // learn more here: https://reactjs.org/docs/hooks-effect.html#effects-with-cleanup
   useEffect(() => {
     return () => saveBookIds(savedBookIds);
   });
 
-  // create method to search for books and set state on form submit
   const handleFormSubmit = async (event) => {
     event.preventDefault();
 
@@ -39,7 +43,7 @@ const SearchBooks = () => {
       const response = await searchGoogleBooks(searchInput);
 
       if (!response.ok) {
-        throw new Error('something went wrong!');
+        throw new Error('Something went wrong with the book search.');
       }
 
       const { items } = await response.json();
@@ -54,17 +58,15 @@ const SearchBooks = () => {
 
       setSearchedBooks(bookData);
       setSearchInput('');
+      setError(null);
     } catch (err) {
       console.error(err);
+      setError('An error occurred while searching for books.');
     }
   };
 
-  // create function to handle saving a book to our database
   const handleSaveBook = async (bookId) => {
-    // find the book in `searchedBooks` state by the matching id
     const bookToSave = searchedBooks.find((book) => book.bookId === bookId);
-
-    // get token
     const token = Auth.loggedIn() ? Auth.getToken() : null;
 
     if (!token) {
@@ -72,16 +74,18 @@ const SearchBooks = () => {
     }
 
     try {
-      const response = await saveBook(bookToSave, token);
+      const { data } = await saveBookMutation({
+        variables: { bookData: bookToSave },
+      });
 
-      if (!response.ok) {
-        throw new Error('something went wrong!');
+      if (!data.saveBook) {
+        throw new Error('Something went wrong while saving the book.');
       }
 
-      // if book successfully saves to user's account, save book id to state
       setSavedBookIds([...savedBookIds, bookToSave.bookId]);
     } catch (err) {
       console.error(err);
+      setError('An error occurred while saving the book.');
     }
   };
 
