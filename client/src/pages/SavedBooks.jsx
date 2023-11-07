@@ -6,27 +6,26 @@ import {
   Row,
   Col
 } from 'react-bootstrap';
-
-import { useQuery, useMutation } from '@apollo/react-hooks';
+import { useQuery, useMutation } from '@apollo/client';
 import { GET_ME} from '../utils/queries'; // Import your GraphQL queries and mutations
 import { REMOVE_BOOK } from '../utils/mutations';
+import Auth from '../utils/auth';
 import { removeBookId } from '../utils/localStorage';
 
-import Auth from '../utils/auth';
+export default function SavedBooks() {
+ 
+  const { loading, data } = useQuery(GET_ME);
+  const [removeBook] = useMutation(REMOVE_BOOK);
 
-const SavedBooks = () => {
   const [userData, setUserData] = useState({});
-    // use this to determine if `useEffect()` hook needs to run again
+  // use this to determine if `useEffect()` hook needs to run again
   const userDataLength = Object.keys(userData).length;
 
-  const { loading, data } = useQuery(GET_ME);
   useEffect(() => {
     if (data?.me) {
       setUserData(data.me);
     }
   }, [data, userDataLength]);
-
-  const [removeBook] = useMutation(REMOVE_BOOK);
 
   // create function that accepts the book's mongo _id value as param and deletes the book from the database
   const handleDeleteBook = async (bookId) => {
@@ -70,8 +69,8 @@ const SavedBooks = () => {
         <Row>
           {userData.savedBooks.map((book) => {
             return (
-              <Col md="4">
-                <Card key={book.bookId} border='dark'>
+              <Col md="4" key={book.bookId}>
+                <Card border='dark'>
                   {book.image ? <Card.Img src={book.image} alt={`The cover for ${book.title}`} variant='top' /> : null}
                   <Card.Body>
                     <Card.Title>{book.title}</Card.Title>
@@ -89,6 +88,4 @@ const SavedBooks = () => {
       </Container>
     </>
   );
-};
-
-export default SavedBooks;
+}

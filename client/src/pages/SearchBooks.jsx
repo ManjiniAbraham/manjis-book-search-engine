@@ -5,29 +5,27 @@ import {
   Form,
   Button,
   Card,
-  Row
+  Row,
 } from 'react-bootstrap';
 
-
 import Auth from '../utils/auth';
+import { useMutation } from '@apollo/client';
 import { searchGoogleBooks } from '../utils/API';
 import { getSavedBookIds, saveBookIds } from '../utils/localStorage';
-import { useMutation } from '@apollo/react-hooks';
 import { SAVE_BOOK } from '../utils/mutations'; // Import your SAVE_BOOK mutation
 
-const SearchBooks = () => {
+
+export default function SearchBooks() {
   // create state for holding returned google api data
   const [searchedBooks, setSearchedBooks] = useState([]);
-  // create state for holding our search field data
+   // create state for holding our search field data
   const [searchInput, setSearchInput] = useState('');
-
   // create state to hold saved bookId values
   const [savedBookIds, setSavedBookIds] = useState(getSavedBookIds());
-
   const [saveBookMutation] = useMutation(SAVE_BOOK);
 
-  // set up useEffect hook to save `savedBookIds` list to localStorage on component unmount
-  // learn more here: https://reactjs.org/docs/hooks-effect.html#effects-with-cleanup
+  const [error, setError] = useState(null);
+
   useEffect(() => {
     return () => saveBookIds(savedBookIds);
   });
@@ -98,16 +96,16 @@ const SearchBooks = () => {
             <Row>
               <Col xs={12} md={8}>
                 <Form.Control
-                  name='searchInput'
+                  name="searchInput"
                   value={searchInput}
                   onChange={(e) => setSearchInput(e.target.value)}
-                  type='text'
-                  size='lg'
-                  placeholder='Search for a book'
+                  type="text"
+                  size="lg"
+                  placeholder="Search for a book"
                 />
               </Col>
               <Col xs={12} md={4}>
-                <Button type='submit' variant='success' size='lg'>
+                <Button type="submit" variant="success" size="lg">
                   Submit Search
                 </Button>
               </Col>
@@ -117,28 +115,34 @@ const SearchBooks = () => {
       </div>
 
       <Container>
-        <h2 className='pt-5'>
+        <h2 className="pt-5">
           {searchedBooks.length
             ? `Viewing ${searchedBooks.length} results:`
             : 'Search for a book to begin'}
         </h2>
+        {error && <p className="error-message">{error}</p>}
         <Row>
           {searchedBooks.map((book) => {
             return (
               <Col md="4" key={book.bookId}>
-                <Card border='dark'>
+                <Card border="dark">
                   {book.image ? (
-                    <Card.Img src={book.image} alt={`The cover for ${book.title}`} variant='top' />
+                    <Card.Img
+                      src={book.image}
+                      alt={`The cover for ${book.title}`}
+                      variant="top"
+                    />
                   ) : null}
                   <Card.Body>
                     <Card.Title>{book.title}</Card.Title>
-                    <p className='small'>Authors: {book.authors}</p>
+                    <p className="small">Authors: {book.authors}</p>
                     <Card.Text>{book.description}</Card.Text>
                     {Auth.loggedIn() && (
                       <Button
                         disabled={savedBookIds?.some((savedBookId) => savedBookId === book.bookId)}
-                        className='btn-block btn-info'
-                        onClick={() => handleSaveBook(book.bookId)}>
+                        className="btn-block btn-info"
+                        onClick={() => handleSaveBook(book.bookId)}
+                      >
                         {savedBookIds?.some((savedBookId) => savedBookId === book.bookId)
                           ? 'This book has already been saved!'
                           : 'Save this Book!'}
@@ -153,6 +157,4 @@ const SearchBooks = () => {
       </Container>
     </>
   );
-};
-
-export default SearchBooks;
+}
